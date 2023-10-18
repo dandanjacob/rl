@@ -1,39 +1,31 @@
 ## Resumo
  Trabalho elaborado por Breno Marquez Azevedo e Daniel Jacob Tonn para avaliação da disciplina
 de Reforcement Learning, coordenada pelo professor Flávio Codeço Coelho, com objetivo de  criar
-um ambiente de simulação onde agentes de aprendizado de máquina podem aprender a jogar o jogo 
-"Assault" com eficiência.O projeto consiste em criar um ambiente de aprendizado de máquina para
-o jogo "Assault" utilizando 
-a biblioteca Gymnasium em Python. 
+um ambiente de simulação onde agentes de aprendizado de máquina podem aprender a jogar o jogo com 
+eficiência. O projeto consiste em criar um ambiente de aprendizado de máquina parao jogo "Assault"
+utilizando a biblioteca Gymnasium em Python. 
 
 ## O jogo
-Assault consiste em um jogo de tiro em 2D, onde o jogador controla um personagem, normalmente
+Assault consiste em jogo de tiro em 2D, onde o jogador controla um personagem, normalmente
  presente na parte inferior da tela, movendo-o para os lados e atirando contra inimigos (estes 
  presentes majoritariamente na parte superior da tela). A complexidade dos movimentos, tiros e 
  inimigos pode variar conforme as fases do jogo avançarem. O objetivo final é alcançar a maior 
  pontuação - avançar o maior número de fases - sem que o personagem controlado seja atingido. 
 
-### Agentes
-Neste ambiente, os agentes são programas de aprendizado de máquina que desempenham o papel de 
-jogadores. Utilizamos  (Q-Learning, Deep Q-Networks (DQN) ou qualquer outro método?). Eles tomam
- decisões com base em informações do ambiente para maximizar sua pontuação. 
-
-### Ambiente
-
-### Estados
-Os estados representam a situação atual do jogo em um determinado momento. No caso do "Assault",
- um estado pode incluir informações como a posição do jogador, a posição dos inimigos, a quantidade
-  de munição disponível e outros detalhes relevantes. Os estados são a informação fornecida para os
-   agentes e são usados para tomar decisões.
-
 ### Ações
 As ações são as escolhas que os agentes podem fazer em um determinado estado. No jogo "Assault", as
- ações podem incluir atirar, recarregar, mover-se para a direita, mover-se para a esquerda, pular e
-  outras ações relevantes para o jogo. Os agentes escolhem ações com o objetivo de maximizar suas 
-  recompensas.
+ ações são atirar e andar, como descritas abaixo.
+ Num  | Action
+ 0    | NOOP
+ 1    | FIRE
+ 2    | UP
+ 3    | RIGHT
+ 4    | LEFT
+ 5    | RIGHTFIRE
+ 6    | LEFTFIRE
 
 ### Recompensas
-As recompensas são valores numéricos que os agentes recebem como feedback sobre suas ações. No "Assault",
-as recompensas podem ser concedidas com base em várias condições, como eliminar inimigos, alcançar  
-checkpoints ou completar níveis. O objetivo dos agentes é maximizar a soma total das recompensas ao
-longo do tempo.
+As recompensas e punições são
+VALOR | AÇÃO
+    | acertar um inimigo
+    | 
