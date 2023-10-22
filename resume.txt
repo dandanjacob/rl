@@ -16,23 +16,10 @@ Assault consiste em jogo de tiro em 2D, onde o jogador controla um personagem, n
 Os estados são as informações que o agente recebe do ambiente. No jogo "Assault", os estados são
  as informações sobre a posição do personagem, a posição dos inimigos, a quantidade de munição e
  a quantidade de vidas restantes.
- O trecho "Box(0, 255, (210, 160, 3), uint8)" parece ser uma descrição de um espaço de observação
-  (observation space) em um ambiente Gym. Nesse caso, é uma observação em forma de matriz (array) 
-  de 3 canais (RGB), onde cada canal é um número inteiro sem sinal (uint8) variando de 0 a 255.
-   Vou explicar em detalhes o que cada parte significa:
-"Box": Isso indica que o espaço de observação é contínuo e, portanto, você pode ter qualquer valor 
-real dentro do intervalo especificado.
-"0, 255": Indica que os valores em cada canal (R, G, B) variam de 0 a 255.
-"(210, 160, 3)": Isso especifica a forma da observação. A observação é uma matriz tridimensional com
- 210 linhas, 160 colunas e 3 canais (correspondendo aos canais RGB).
-"uint8": Isso indica que os valores em cada canal são números inteiros não assinados de 8 bits
- (0 a 255).
-Essa descrição é típica de observações em ambientes do Gym que representam imagens coloridas em formato de matriz com valores de pixel em RGB, onde cada canal é representado por números inteiros sem sinal (uint8). Você pode usar essa informação para definir como o agente percebe o ambiente e processa as informações visuais para tomar decisões com base nas observações.
-
-
-
-
-
+ O espaço de observação é matriz (array) de 3 canais (RGB), onde cada canal é um número inteiro sem 
+ sinal (uint8) variando de 0 a 255. A forma da matriz é (210, 160, 3), ou seja, 210 linhas, 160 colunas.
+O espaço de observação é contínuo e, portanto, você pode ter qualquer valor real dentro do intervalo
+ especificado. Em outras palavras, o espaço de observação é uma imagem.
 
 
 ### Ações
@@ -52,3 +39,10 @@ As recompensas e punições são
 VALOR | AÇÃO
     | acertar um inimigo
     | 
+
+### Solução
+Como o espaço de observação é uma imagem, a solução proposta para o problema é a utilização do 
+algoritmo DQN (Deep Q-Network), que é um algoritmo de aprendizado por reforço que utiliza redes neurais. 
+
+#referencias
+->https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html

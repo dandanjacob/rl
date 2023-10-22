@@ -3,11 +3,17 @@
 '''
 
 import gym
+import math
+import random
+import matplotlib
+import matplotlib.pyplot as plt
+from collections import namedtuple, deque
+from itertools import count
+
 import torch
 import torch.nn as nn
-import numpy as np
 import torch.optim as optim
-from gym.wrappers import AtariPreprocessing
+import torch.nn.functional as F
 
 ########################## AMBIENTE ##########################
 # Verifica se o ambiente está registrado
@@ -25,118 +31,122 @@ print(f"Actions: {actions}")
 
 ########################## REDE NEURAL ##########################
 # Rede neural para a função Q
-class QNetwork(nn.Module):
-    def __init__(self, num_actions):
-        super(QNetwork, self).__init__()
-        self.conv1 = nn.Conv2d(3, 32, kernel_size=8, stride=4)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
-        self.fc1 = nn.Linear(64 * 9 * 7, 256)
-        self.fc2 = nn.Linear(256, num_actions)
+class DQN(nn.Module):
 
+    def __init__(self, n_observations, n_actions):
+        super(DQN, self).__init__()
+        self.layer1 = nn.Linear(n_observations, 128)
+        self.layer2 = nn.Linear(128, 128)
+        self.layer3 = nn.Linear(128, n_actions)
+
+    # Called with either one element to determine next action, or a batch
+    # during optimization. Returns tensor([[left0exp,right0exp]...]).
     def forward(self, x):
-        x = torch.relu(self.conv1(x))
-        x = torch.relu(self.conv2(x))
-        x = x.view(x.size(0), -1)
-        x = torch.relu(self.fc1(x))
-        x = self.fc2(x)
-        return x
+        x = F.relu(self.layer1(x))
+        x = F.relu(self.layer2(x))
+        return self.layer3(x)
     
 ########################## ALGORITMO RL ##########################
+#tendo o ambiente e a rede neural definidos, podemos implementar o algoritmo de aprendizado por reforço
+#definindo os hiperparâmetros
+BATCH_SIZE = 128
+GAMMA = 0.999
+EPS_START = 0.9
+EPS_END = 0.05
+EPS_DECAY = 200
+TARGET_UPDATE = 10
+n_observations = height * width * channels
 
-# Definir hiperparâmetros
-learning_rate = 0.001
-discount_factor = 0.99
-epsilon = 0.1
-EPISODES = 3
+#criando a rede neural e o otimizador
+policy_net = DQN(n_observations, actions)
+target_net = DQN(n_observations, actions)
+target_net.load_state_dict(policy_net.state_dict())
+target_net.eval()
+optimizer = optim.Adam(params=policy_net.parameters(), lr=0.0001)
 
-# Inicializar a rede neural Q e otimizador
-q_network = QNetwork(num_actions=env.action_space.n)
-optimizer = optim.Adam(q_network.parameters(), lr=learning_rate)
+#criando a memória de replay
+Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
+memory = deque(maxlen=10000)
 
-########################## TESTE DE EXECUÇÃO ##########################
-# ORIGINAL DO BRENO
-# for episode in range(1, EPISODES + 1):
-#     state = env.reset()
-#     DONE = False
-#     SCORE = 0
+#criando a função de seleção de ação
+steps_done = 0
 
-#     # Loop de execução
-#     while not DONE:
-#         env.render()
-#         action = env.action_space.sample()
-#         n_state, reward, DONE, TRUNCATED, info = env.step(action)
-#         SCORE += reward
+def select_action(state):
+    global steps_done
+    sample = random.random()
+    eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(-1.0 * steps_done / EPS_DECAY)
+    steps_done += 1
+    if sample > eps_threshold:
+        with torch.no_grad():
+            return policy_net(state).max(1)[1].view(1, 1)
+    else:
+        return torch.tensor([[random.randrange(actions)]], dtype=torch.long)
+    
+#criando a função de otimização
+def optimize_model():
+    if len(memory) < BATCH_SIZE:
+        return
+    transitions = random.sample(memory, BATCH_SIZE)
+    batch = Transition(*zip(*transitions))
+    
+    non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, batch.next_state)), dtype=torch.bool)
+    non_final_next_states = torch.cat([s for s in batch.next_state if s is not None])
+    
+    state_batch = torch.cat(batch.state)
+    action_batch = torch.cat(batch.action)
+    reward_batch = torch.cat(batch.reward)
+    
+    state_action_values = policy_net(state_batch).gather(1, action_batch)
+    
+    next_state_values = torch.zeros(BATCH_SIZE)
+    next_state_values[non_final_mask] = target_net(non_final_next_states).max(1)[0].detach()
+    
+    expected_state_action_values = (next_state_values * GAMMA) + reward_batch
+    
+    loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
+    
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
 
-#     # Exibe o resultado do episódio
-#     print(f"Episode: {episode}/{EPISODES}, Score: {SCORE}")
-# env.close()
-#################################################################################
-#TESTE DANDAN
-# Loop de treinamento
-# Função para pré-processar as observações manualmente
-def preprocess_observation(observation):
-    # Redimensionar a observação para o tamanho desejado (neste caso, 84x84)
-    observation = observation[34:194, :, :]  # Recorta a área relevante
-    observation = np.mean(observation, axis=2)  # Converte para tons de cinza
-    observation = observation[::2, ::2]  # Reduz a resolução pela metade
-    observation = observation.astype(np.float32) / 255.0  # Normaliza os valores para o intervalo [0, 1]
+########################## TREINAMENTO ##########################
 
-    # Converter a observação para um tensor do PyTorch
-    observation = torch.tensor(observation)
-
-    # Adicionar uma dimensão de lote (batch)
-    observation = observation.unsqueeze(0)
-
-    return observation
-
-# ...
-
-# Loop de treinamento
-for episode in range(EPISODES):
-    state = env.reset()
-    state = preprocess_observation(state)  # Pré-processar a observação
-    done = False
-    total_reward = 0
-
-    while not done:
-        if np.random.rand() < epsilon:
-            action = env.action_space.sample()
+#treinando a rede neural
+num_episodes = 1000
+for i_episode in range(num_episodes):
+    # Inicializa o ambiente e o estado
+    env.reset()
+    last_screen = env.render(mode='rgb_array')
+    current_screen = env.render(mode='rgb_array')
+    state = current_screen - last_screen
+    
+    for t in count():
+        # Seleciona e executa uma ação
+        action = select_action(state)
+        _, reward, done, _ = env.step(action.item())
+        reward = torch.tensor([reward], dtype=torch.float)
+        
+        # Observa a nova tela
+        last_screen = current_screen
+        current_screen = env.render(mode='rgb_array')
+        if not done:
+            next_state = current_screen - last_screen
         else:
-            state_tensor = state
-            q_values = q_network(state_tensor)
-            action = q_values.argmax().item()
-
-        next_state, reward, done, _ = env.step(action)
-        next_state = preprocess_observation(next_state)  # Pré-processar a observação
-
-
-        # Calcular o alvo Q usando a equação de Bellman
-        next_state = np.array(next_state)  # Converter de tuple para array NumPy
-        next_state = next_state.transpose(2, 0, 1)
-        next_state = next_state.astype(np.float32) / 255.0
-        next_state = torch.tensor(next_state)
-        next_state = next_state.unsqueeze(0)
-
-        next_q_values = q_network(next_state)
-        q_target = reward + discount_factor * next_q_values.max().item()
-
-        # Calcular a perda de Q-learning
-        state_tensor = state
-        q_values = q_network(state_tensor)
-        loss = nn.MSELoss()(q_values, q_target)
-
-        # Atualizar a rede neural Q
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
+            next_state = None
+            
+        # Armazena a transição na memória
+        memory.append(Transition(state, action, next_state, reward))
+        
+        # Move para o próximo estado
         state = next_state
-        total_reward += reward
+        
+        # Realiza uma otimização de uma amostra da memória
+        optimize_model()
+        if done:
+            break
+            
+    # Atualiza a rede neural alvo, copiando os parâmetros da rede neural
+    if i_episode % TARGET_UPDATE == 0:
+        target_net.load_state_dict(policy_net.state_dict())
 
-    print(f"Episode: {episode + 1}, Total Reward: {total_reward}")
-
-# Avaliar o agente após o treinamento
-# Implementar a avaliação do agente aqui
-
-# Salvar o modelo treinado
-torch.save(q_network.state_dict(), "q_network.pth")
+print('Treinamento concluído') 
