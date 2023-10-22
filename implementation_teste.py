@@ -3,6 +3,8 @@
 '''
 
 import gym
+import torch
+import torch.nn as nn
 
 # Verifica se o ambiente está registrado
 keys = gym.envs.registry.keys()
@@ -16,6 +18,25 @@ height, width, channels = env.observation_space.shape
 actions = env.action_space.n
 print(f"Height: {height}, Width: {width}, Channels: {channels}")
 print(f"Actions: {actions}")
+
+# Rede neural para a função Q
+class QNetwork(nn.Module):
+    def __init__(self, num_actions):
+        super(QNetwork, self).__init__()
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+        self.fc1 = nn.Linear(64 * 9 * 7, 256)
+        self.fc2 = nn.Linear(256, num_actions)
+
+    def forward(self, x):
+        x = torch.relu(self.conv1(x))
+        x = torch.relu(self.conv2(x))
+        x = x.view(x.size(0), -1)
+        x = torch.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+
 
 # Teste de execução
 EPISODES = 3
