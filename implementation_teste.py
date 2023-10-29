@@ -1,7 +1,7 @@
 '''
     Teste de implementação do ambiente Assult do Atari Learning Environment (ALE)
 '''
-
+#Importação das bibliotecas
 import gym
 import math
 import random
@@ -14,6 +14,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+
 
 ########################## AMBIENTE ##########################
 # Verifica se o ambiente está registrado
@@ -31,23 +32,31 @@ print(f"Actions: {actions}")
 
 ########################## REDE NEURAL ##########################
 # Rede neural para a função Q
+
 class DQN(nn.Module):
-
-    def __init__(self, n_observations, n_actions):
+    def __init__(self, n_actions):
         super(DQN, self).__init__()
-        self.layer1 = nn.Linear(n_observations, 128)
-        self.layer2 = nn.Linear(128, 128)
-        self.layer3 = nn.Linear(128, n_actions)
+        # Camadas de convolução para processar imagens
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
+        self.fc1 = nn.Linear(64 * 6 * 6, 512)  # 6x6 é o tamanho das camadas convolucionais
+        self.fc2 = nn.Linear(512, n_actions)
 
-    # Called with either one element to determine next action, or a batch
-    # during optimization. Returns tensor([[left0exp,right0exp]...]).
     def forward(self, x):
-        x = F.relu(self.layer1(x))
-        x = F.relu(self.layer2(x))
-        return self.layer3(x)
-    
+        # Aplica as camadas de convolução
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        x = x.view(x.size(0), -1)  # Achata a saída das camadas convolucionais
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+
+
+
 ########################## ALGORITMO RL ##########################
-#tendo o ambiente e a rede neural definidos, podemos implementar o algoritmo de aprendizado por reforço
 #definindo os hiperparâmetros
 BATCH_SIZE = 128
 GAMMA = 0.999
@@ -58,8 +67,10 @@ TARGET_UPDATE = 10
 n_observations = height * width * channels
 
 #criando a rede neural e o otimizador
-policy_net = DQN(n_observations, actions)
-target_net = DQN(n_observations, actions)
+policy_net = DQN(actions)
+print(policy_net)
+
+target_net = DQN(actions)
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
 optimizer = optim.Adam(params=policy_net.parameters(), lr=0.0001)
@@ -116,8 +127,8 @@ num_episodes = 1000
 for i_episode in range(num_episodes):
     # Inicializa o ambiente e o estado
     env.reset()
-    last_screen = env.render(mode='rgb_array')
-    current_screen = env.render(mode='rgb_array')
+    last_screen = env.render()
+    current_screen = env.render('rgb_array')
     state = current_screen - last_screen
     
     for t in count():
@@ -128,7 +139,7 @@ for i_episode in range(num_episodes):
         
         # Observa a nova tela
         last_screen = current_screen
-        current_screen = env.render(mode='rgb_array')
+        current_screen = env.render('rgb_array')
         if not done:
             next_state = current_screen - last_screen
         else:
