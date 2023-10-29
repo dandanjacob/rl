@@ -22,7 +22,7 @@ keys = gym.envs.registry.keys()
 print("ALE/Assault-v5" in keys)
 
 # Cria o ambiente
-env = gym.make("ALE/Assault-v5", render_mode="human")
+env = gym.make("ALE/Assault-v5", render_mode="rgb_array")
 
 # Verifica o espaço de observação e ações
 height, width, channels = env.observation_space.shape
@@ -87,6 +87,7 @@ def select_action(state):
     sample = random.random()
     eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(-1.0 * steps_done / EPS_DECAY)
     steps_done += 1
+    
     if sample > eps_threshold:
         with torch.no_grad():
             return policy_net(state).max(1)[1].view(1, 1)
@@ -128,18 +129,27 @@ for i_episode in range(num_episodes):
     # Inicializa o ambiente e o estado
     env.reset()
     last_screen = env.render()
+<<<<<<< Updated upstream
     current_screen = env.render('rgb_array')
+=======
+    current_screen = env.render()
+
+>>>>>>> Stashed changes
     state = current_screen - last_screen
     
     for t in count():
         # Seleciona e executa uma ação
         action = select_action(state)
-        _, reward, done, _ = env.step(action.item())
+        _, reward, done, _, info = env.step(action)
         reward = torch.tensor([reward], dtype=torch.float)
         
         # Observa a nova tela
         last_screen = current_screen
+<<<<<<< Updated upstream
         current_screen = env.render('rgb_array')
+=======
+        current_screen = env.render()
+>>>>>>> Stashed changes
         if not done:
             next_state = current_screen - last_screen
         else:
