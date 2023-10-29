@@ -129,7 +129,12 @@ for i_episode in range(num_episodes):
     # Inicializa o ambiente e o estado
     env.reset()
     last_screen = env.render()
+<<<<<<< Updated upstream
     current_screen = env.render('rgb_array')
+=======
+    current_screen = env.render()
+
+>>>>>>> Stashed changes
     state = current_screen - last_screen
     
     for t in count():
@@ -140,7 +145,11 @@ for i_episode in range(num_episodes):
         
         # Observa a nova tela
         last_screen = current_screen
+<<<<<<< Updated upstream
         current_screen = env.render('rgb_array')
+=======
+        current_screen = env.render()
+>>>>>>> Stashed changes
         if not done:
             next_state = current_screen - last_screen
         else:
