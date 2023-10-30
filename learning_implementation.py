@@ -23,7 +23,7 @@ else:
     print("ALE/Assault-v5" in keys)
 
 # Make the environment
-env = gym.make("ALE/Assault-v5", render_mode="rgb_array", obs_type="rgb", full_action_space=False)
+env = gym.make("ALE/Assault-v5", render_mode="rgb_array", full_action_space=False)
 
 # View of the environment
 height, width, channels = env.observation_space.shape
@@ -39,12 +39,13 @@ class DQNAgent:
     def __init__(self, state_shape, action_size):
         self.state_shape = state_shape
         self.action_size = action_size
-        self.memory = deque(maxlen=2000)  # Replay memory
-        self.gamma = 0.95  # Discount factor
-        self.epsilon = 1.0  # Exploration rate
+        self.memory = deque(maxlen=2000)
+        self.gamma = 0.95
+        self.epsilon = 1.0
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.995
         self.learning_rate = 0.001
+        self.losses = []
 
         # Create the Q-network
         self.model = self._build_model()
@@ -67,6 +68,12 @@ class DQNAgent:
             return np.random.choice(self.action_size)
         act_values = self.model.predict(state)
         return np.argmax(act_values[0])
+    
+    def adaptive_epsilon_decay(self, episode_number):
+        # Implement a strategy to adapt epsilon decay
+        # For example, reducing the decay rate as the number of episodes increases
+        self.epsilon = max(self.epsilon_min, self.epsilon_decay**episode_number)
+
 
     def replay(self, BATCH_SIZE):
         if len(self.memory) < BATCH_SIZE:
@@ -77,18 +84,22 @@ class DQNAgent:
             if not DONE:
                 target = (reward + self.gamma * np.amax(self.model.predict(next_state)[0]))
             target_f = self.model.predict(state)
+            old_target = target_f[0][action]
             target_f[0][action] = target
-            self.model.fit(state, target_f, epochs=1, verbose=0)
+            history = self.model.fit(state, target_f, epochs=1, verbose=0)
+            new_target = history.history['loss'][0]
+            self.losses.append(abs(new_target - old_target))
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
+
 # Initialization
-env = gym.make("ALE/Assault-v5", render_mode="rgb_array")
+#env = gym.make("ALE/Assault-v5", render_mode="human")
 state_shape = env.observation_space.shape
 action_size = env.action_space.n
 agent = DQNAgent(state_shape, action_size)
-BATCH_SIZE = 32
-NUM_EPISODES = 5
+BATCH_SIZE = 256
+NUM_EPISODES = 30
 
 # List to store the rewards obtained in each episode
 reward_list = []
@@ -114,9 +125,10 @@ for episode in range(NUM_EPISODES):
     state = env.reset()[0]
     state = np.reshape(state, [1, state_shape[0], state_shape[1], state_shape[2]])
     TOTAL_REWARD = 0
-    for time in range(5000):
+    for time in range(10000):
         # Uncomment the line below to visualize the game
-        env.render()
+        #env.render()
+        agent.adaptive_epsilon_decay(episode)
         action = agent.act(state)
         next_state, reward, DONE, TRUNCATED, info = env.step(action)
         next_state = np.reshape(next_state, [1, state_shape[0], state_shape[1], state_shape[2]])
@@ -151,10 +163,21 @@ print(f"Min reward: {np.min(reward_list)}")
 if not os.path.exists("plots"):
     os.makedirs("plots")
 
-
+plt.figure()
 plt.plot(reward_list)
 plt.grid()
 plt.xlabel("Episodes")
 plt.ylabel("Rewards")
 plt.title("Rewards over episodes")
-plt.savefig("plots/assault.png")
+plt.savefig("plots/assault_rewards.png")
+plt.close()
+
+# Save the plot of losses over iterations
+plt.figure()
+plt.plot(agent.losses)
+plt.grid()
+plt.xlabel('Iterations')
+plt.ylabel('Loss')
+plt.title('Training Loss over Episodes')
+plt.savefig('plots/assault_loss.png')
+plt.close()
