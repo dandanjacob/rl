@@ -17,6 +17,10 @@ Instale as dependências com o comando:
     pip install -r requirements.txt
 
 ```
+Execute o código com o comando:
+```bash
+    python run_assault.py
+```
 
 ## Resumo
  Trabalho elaborado por Breno Marquez Azevedo e Daniel Jacob Tonn para avaliação da disciplina
