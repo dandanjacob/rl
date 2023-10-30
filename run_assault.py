@@ -11,7 +11,7 @@ from tensorflow.keras.models import load_model # pylint: disable=import-error
 from learning_implementation import DQNAgent
 
 # Initialization
-env = gym.make("ALE/Assault-v5", render_mode="rgb_array")
+env = gym.make("ALE/Assault-v5", render_mode="human", obs_type="rgb", full_action_space=False)
 state_shape = env.observation_space.shape
 action_size = env.action_space.n
 agent = DQNAgent(state_shape, action_size)
