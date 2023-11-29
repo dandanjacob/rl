@@ -32,6 +32,9 @@ utilizando as bibliotecas Gymnasium e Pytorch, ambas em Python.
 ## Implementação
 O ambiente foi preparado usando a biblioteca Gymnasium[atari], enquanto o restante do código foi feito usando a biblioteca Pytorch além de, claro, bibliotecas adicionais como os, numpy, etc. O modelo de prendizagem utilizado foi o DQN, que é um algoritmo de aprendizado por reforço que utiliza redes neurais, onde os pesos fornecidos pela rede neural são os valores Q, que são os valores que o agente recebe do ambiente pra decidir qual ação tomar.
 
+## Modelos
+O modelo de aprendizagem utilizado foi o DQN, que é um algoritmo de aprendizado por reforço que utiliza redes neurais, onde os pesos fornecidos pela rede neural são os valores Q, que são os valores que o agente recebe do ambiente pra decidir qual ação tomar. O modelo que foi treinado, bem como a memoria de replay, estão salvos no arquivo "loaded.zip", e podem ser carregados para serem testados.
+
 ## O jogo
 Assault consiste em jogo de tiro em 2D, onde o jogador controla um personagem, normalmente
  presente na parte inferior da tela, movendo-o para os lados e atirando  para cima e para os lados 
