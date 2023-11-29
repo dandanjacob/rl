@@ -67,9 +67,11 @@ As recompensas são os valores que o agente recebe do ambiente após realizar um
 Aqui, a recompensa é quando ele acerta algum inimigo, o que faz com que sua recompensa seja também seu score.
 
 
+### Aprensentação
+https://www.canva.com/design/DAFxyxu9Slo/xQdNEZyKsDkmGKHhHOm6lg/edit
 
 
-#referencias
+# referencias
 -> https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
 -> https://www.gymlibrary.dev/environments/atari/assault/
 -> https://github.com/Gouet/PPO-pytorch
